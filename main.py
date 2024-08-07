@@ -197,15 +197,42 @@ def subs(dna1, dna2):
             
     return " ".join(locations)
 
-def cons(dna1, dna2):
+def cons(datafile):
     ''' Ex. 11: Consensus and Profile '''
-    locations = []
     
-    for i in range(len(dna1)-len(dna2)):
-        if dna1[i:i+len(dna2)] == dna2:
-            locations.append(str(i+1))
+    genome_dict = read_fast_file(datafile)
+    dna_len = len(next(iter(genome_dict.values())))
+    
+    A_count = [0] * dna_len
+    C_count = [0] * dna_len
+    G_count = [0] * dna_len
+    T_count = [0] * dna_len
+    for v in genome_dict.values():
+        for idx, nuc in enumerate(v):
+            if nuc == 'A':
+                A_count[idx] += 1
+            elif nuc == 'C':
+                C_count[idx] += 1
+            elif nuc == 'G':
+                G_count[idx] += 1
+            elif nuc == 'T':
+                T_count[idx] += 1
+
+    dna_consensus = ""
+    for idx in range(dna_len):
+        candidate = 'A'
+        count = A_count[idx]
+        if C_count[idx] > count:
+            candidate = 'C'
+            count = C_count[idx]
+        if G_count[idx] > count:
+            candidate = 'G'
+            count = G_count[idx]
+        if T_count[idx] > count:
+            candidate = 'T'
+        dna_consensus += candidate
             
-    return " ".join(locations)
+    return dna_consensus, A_count, C_count, G_count, T_count
 
 
 print ()
@@ -270,7 +297,12 @@ print (subs(dna1, dna2))
 
 print ()
 print (cons.__doc__)
-dna1 = "CGTATGAACCGTATGAAATCGTATGAGGCGTATGAAGCCCGTATGAATCCGTCCCGTATGACACGTATGATGTCCCGTATGACGTATGACGTATGACGTATGAAAGCGTATGACGTATGATCCACCGTATGAGACGTATGACGTATGACACGTATGACGTATGACGTATGAGCGTATGATCGTATGAGACGTATGACCCGTATGACGTATGAAGCCTCGTATGAACGTATGAGATCACGTATGACGTATGACAAGGCGTATGAATCGTATGAATACCGCGTATGATGGAGTCGTATGACCGCGTATGAAAGGCTCGTATGAAGCGCGTATGACCGTATGACGTATGACGTATGAAACGTATGACGTATGAGCGTATGATCGTATGACCGGCGTATGAGCCATTTGCGTATGAACGTATGAGCTCTCGTATGAATAACGTATGATGACGTATGAGGTCGTATGACGTATGAAGCGTATGATACGTATGAGTTACGTATGACAGCTTCGCTTCCGTACGTATGATTCCGTATGAGATCTCCGTATGACGTGTCGTATGAGCGTATGACACTCATAGCGTATGATCGTATGACGTAATCGTATGACACGTATGACGTATGACTCGTATGACGTATGACTCGTATGATCGTATGACGTATGAGCCGTATGACCGTATGACCGTATGACCCGTATGAACCGTATGACACTTACGTATGAAACGTATGAGCCCCCGTATGACGTATGAACGTATGAAGCACGTATGAAGAGCCGCGTATGAGCCGCAGTGCGTATGAGCTCGTATGACGTATGAACGTATGAGTGTCCCGTATGAAGAAACGTATGACGTATGACGTATGAGCCGTATGATACTCGTATGA"
-dna2 = "CGTATGACG"
-print (dna1, dna2)
-print (cons(dna1, dna2))
+print ("datafile: cons_dataset.txt")
+dna_consensus, A_profile, C_profile, G_profile, T_profile = cons('cons_dataset.txt')
+print (dna_consensus)
+print ('A:', " ".join(str(x) for x in A_profile))            
+print ('C:', " ".join(str(x) for x in C_profile))            
+print ('G:', " ".join(str(x) for x in G_profile))            
+print ('T:', " ".join(str(x) for x in T_profile))            
+
+    

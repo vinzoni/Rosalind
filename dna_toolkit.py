@@ -17,8 +17,21 @@ def gc_content(dnaString):
     return (count / len(dnaString)) * 100
 
 def read_fast_file(filename):
-    text = open(filename, "r").read().splitlines()
+
+    lines = open(filename, "r").read().splitlines()
     genome_dict = {}
-    for idx in range(0, len(text)-1, 2):
-        (fast_id, data, score) = (text[idx][1:], text[idx+1], gc_content(text[idx+1]))
-        genome_dict[fast_id] = (data, score)
+    current_id = ""
+    current_genome = ""
+    for l in lines:
+        if l[0] == ">":
+            if len(current_genome) > 0:
+                (fast_id, data) = (current_id, current_genome)
+                genome_dict[fast_id] = data
+            current_id = l[1:]
+            current_genome = ""
+        else:
+            current_genome += l
+    (fast_id, data) = (current_id, current_genome)
+    genome_dict[fast_id] = data
+    
+    return genome_dict
