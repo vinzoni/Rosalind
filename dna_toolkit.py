@@ -18,7 +18,9 @@ def gc_content(dnaString):
 
 def read_fast_file(filename):
 
-    lines = open(filename, "r").read().splitlines()
+    with open(filename, "r") as f:
+        lines = f.read().splitlines()
+        
     genome_dict = {}
     current_id = ""
     current_genome = ""

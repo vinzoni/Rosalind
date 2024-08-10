@@ -1,0 +1,134 @@
+import random
+
+def mate1(male, female):
+    offspring = male[random.randint(0,1)] + female[random.randint(0,1)]
+#    if offspring == "aA":
+ #       offspring = "Aa"
+    return offspring
+
+
+def mate2(male, female):
+    offspring = male[random.randint(0,1)] + female[random.randint(0,1)] + male[random.randint(2,3)] + female[random.randint(2,3)] 
+#    if offspring == "aA":
+ #       offspring = "Aa"
+    return offspring
+
+def one_gene():
+    tom = "Aa"
+    partner = "Aa"
+    
+    rounds = 1000000
+    good = 0
+    
+    for i in range(rounds):
+        generation1 = []
+        ok_offsprings = 0
+        for j in range(2):
+            offspring = mate1(tom, partner)
+            generation1.append(offspring)
+        for off in generation1:
+            for j in range(2):
+                offspring = mate1(off, partner)
+                if offspring == "Aa":
+                    ok_offsprings += 1
+                elif offspring == "aA":
+                    ok_offsprings += 1
+            
+        if ok_offsprings > 0:
+            good += 1
+        
+    return good, rounds
+
+def two_genes():
+    tom = "AaBb"
+    partner = "AaBb"
+    
+    rounds = 1000000
+    good = 0
+    
+    for i in range(rounds):
+        generation1 = []
+        ok_offsprings = 0
+        for j in range(2):
+            offspring = mate2(tom, partner)
+            generation1.append(offspring)
+        for off in generation1:
+            for j in range(2):
+                offspring = mate2(off, partner)
+#                print (offspring)
+                if offspring == "AaBb":
+                    ok_offsprings += 1
+                elif offspring == "aABb":
+                    ok_offsprings += 1
+                elif offspring == "AabB":
+                    ok_offsprings += 1
+                elif offspring == "aAbB":
+                    ok_offsprings += 1
+            
+        if ok_offsprings > 0:
+            good += 1
+        
+    return good, rounds
+
+def two_genes_2():
+    tom = "AaBb"
+    partner = "AaBb"
+    
+    rounds = 1000000
+    good = 0
+    
+    for i in range(rounds):
+        ok_offsprings = 0
+        for j in range(2):
+            offspring = mate2(tom, partner)
+            for j in range(2):
+                offspring = mate2(offspring, partner)
+#                print (offspring)
+                if offspring == "AaBb":
+                    ok_offsprings += 1
+                elif offspring == "aABb":
+                    ok_offsprings += 1
+                elif offspring == "AabB":
+                    ok_offsprings += 1
+                elif offspring == "aAbB":
+                    ok_offsprings += 1
+            
+        if ok_offsprings > 0:
+            good += 1
+        
+    return good, rounds
+
+def two_genes_3(k, n):
+    offspring = "AaBb"
+    partner = "AaBb"
+    
+    rounds = 1000000
+    good = 0
+    
+    for i in range(rounds):
+        ok_offsprings = 0
+        for j in range(2 ** k):
+#            offspring = mate2(offspring, partner)
+#            offspring = mate2(offspring, partner)
+            male = offspring
+            female = partner
+            offspring = male[random.randint(0,1)] + female[random.randint(0,1)] + male[random.randint(2,3)] + female[random.randint(2,3)] 
+            if offspring == "AaBb":
+                ok_offsprings += 1
+            elif offspring == "aABb":
+                ok_offsprings += 1
+            elif offspring == "AabB":
+                ok_offsprings += 1
+            elif offspring == "aAbB":
+                ok_offsprings += 1
+            
+        if ok_offsprings >= n:
+            good += 1
+        
+    return round((good / rounds), 4)
+
+k = 2
+n = 1
+prob = two_genes_3(k, n)
+print (prob)
+

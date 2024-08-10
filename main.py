@@ -7,6 +7,9 @@ Created on Sun Jul 14 17:21:18 2024
 """
 
 from dna_toolkit import *
+import time
+import random
+import requests
 
 def dna(dnaString):
     ''' Ex. 1: counting DNA Nucleotides '''
@@ -69,23 +72,6 @@ def fibd(n, m):
         newborns[idx] = pairs[idx] + deaths - pairs[idx-1]
         
     return pairs[n-1]
-
-def gc(filename):
-    ''' Ex. 6: Computing GC Content '''
-    text = open(filename, "r").read().splitlines()
-    genome_dict = {}
-    for idx in range(0, len(text)-1, 2):
-        (fast_id, data, score) = (text[idx][1:], text[idx+1], gc_content(text[idx+1]))
-        genome_dict[fast_id] = (data, score)
-        
-    max_score = 0
-    winning_id = ""
-    for k, v in genome_dict.items():
-        if v[1] > max_score:
-            winning_id = k
-            max_score = v[1]
-    
-    return winning_id + "\n" + str(max_score);
 
 def gc(filename):
     ''' Ex. 6: Computing GC Content '''
@@ -234,6 +220,131 @@ def cons(datafile):
             
     return dna_consensus, A_count, C_count, G_count, T_count
 
+def grph(datafile):
+    ''' Ex. 12: Overlap Graphs '''
+    genome_dict = read_fast_file(datafile)
+    reverse_genome_dict = {k: v for v, k in genome_dict.items()}
+    
+    res = []
+    for k1 in reverse_genome_dict.keys():
+        for k2 in reverse_genome_dict.keys():
+            if k1 == k2:
+                continue
+            head = k2[0:3]
+            tail = k1[-3:]
+            if head == tail:
+                res.append(reverse_genome_dict[k1] + " " + reverse_genome_dict[k2])
+            
+    return res
+
+def iev(population_str):
+    ''' Ex. 13: Calculating Expected Offspring '''
+    populations = list(map(int, population_str.split()))
+    # genotypes:
+    #        AA-AA, AA-Aa, AA-aa, Aa-Aa, Aa-aa, aa-aa
+    probs = [1.0,   1.0,   1.0,   0.75,   0.5,  0]
+    
+    result = 0
+    for pop, prob in zip(populations, probs):
+        result += prob * pop
+    
+    offsprings_per_couple = 2
+    return result * offsprings_per_couple
+
+def lcsm(datafile):
+    ''' Ex. 14: Finding a Shared Motif '''
+    genome_dict = read_fast_file(datafile)
+    
+    first_value = next(iter(genome_dict.values()))
+    for motif_len in range(len(first_value)+1, 1, -1):
+        for i in range(len(first_value)-motif_len+1):
+            candidate = first_value[i: i+motif_len]
+            occurrences = 0
+            for v in genome_dict.values():
+                if (candidate in v):
+                    occurrences += 1
+                else: # senza questo else fnziona ma ci mette due minuti anziche due secondi.
+                    break
+            if occurrences == len(genome_dict.items()):
+                return candidate
+            
+    return "no shared motif"
+
+def lia(k, n, rounds):
+    ''' Ex. 15: Indipendent Alleles '''
+    offspring = "AaBb"
+    partner = "AaBb"
+    
+    good = 0
+    
+    for i in range(rounds):
+        ok_offsprings = 0
+        for j in range(2 ** k):
+#            offspring = mate2(offspring, partner)
+#            offspring = mate2(offspring, partner)
+            male = offspring
+            female = partner
+            offspring = male[random.randint(0,1)] + female[random.randint(0,1)] + male[random.randint(2,3)] + female[random.randint(2,3)] 
+            if offspring == "AaBb":
+                ok_offsprings += 1
+            elif offspring == "aABb":
+                ok_offsprings += 1
+            elif offspring == "AabB":
+                ok_offsprings += 1
+            elif offspring == "aAbB":
+                ok_offsprings += 1
+            
+        if ok_offsprings >= n:
+            good += 1
+        
+    return round((good / rounds), 4)
+
+def mprt(datafile):
+    ''' Ex. 16: Finding a Protein Motif '''
+    
+    proteins = []
+    with open(datafile, 'r') as f:
+        for line in f.readlines():
+            proteins.append(line.strip().split("_")[0])
+            
+            
+    fastafile = datafile.split(".")[0]+".fasta"
+    protein_database_url = "https://rest.uniprot.org/uniprotkb/PROTEIN.fasta"
+    with open(fastafile, "w") as f:
+        for protein in proteins:
+            url = protein_database_url.replace("PROTEIN", protein)
+            response = requests.get(url)
+                  
+            if response.status_code == 200:
+                f.write(response.text)
+            else:
+                return f"Errore nella richiesta: {response.status_code}"
+            
+    # N-glycosylation motif is written as N{P}[ST]{P}.
+    N_glycosylation_pattern_len = 4
+
+    protein_dict = read_fast_file(fastafile)
+    motif_dict = {}
+    
+    for k, v in protein_dict.items():
+        motif_dict[k] = []
+        for i in range(len(v)-N_glycosylation_pattern_len+1):
+            sliding_window = v[i:i+N_glycosylation_pattern_len]
+            if "P" in sliding_window:
+                continue
+            if sliding_window[0] == "N" and sliding_window[2] == "S":
+                motif_dict[k].append(i+1)
+            if sliding_window[0] == "N" and sliding_window[2] == "T":
+                motif_dict[k].append(i+1)
+
+    retval = ""
+    for k in motif_dict.keys():
+        if motif_dict[k] == []:
+            continue
+        protein_name = k.split("|")[1]
+        motif_locations = ' '.join(str(x) for x in motif_dict[k])
+        retval += f"{protein_name}\n{motif_locations}\n"
+    return retval
 
 print ()
 print (dna.__doc__)
@@ -246,6 +357,12 @@ print (rna.__doc__)
 dnaString = "CCCAACAGGCATGTGCGATGAATTATGGTGGCAGGAGCCATTAATAACATCGCTGTGGCCCAACCGGGATGTTGAGAGTTCAACCGATTTCGGCAAAACAAAGACACAGACGAGTTTTGTTTGGGAGGTAGAGCGAGAAGCCCCCATGCCGGATCCATCACCCGGTCTGTAACTTTTTAGGATAGGCGGGCGTGGTCTCCGCATTATCATTCAATCGCGGGTGCCGTATCTCGCCGTCGTTGCATCCCTTACAGCGGGACCAATACACGAACCAGTCCAATCAGGCTTGCTTGATACGCAAAATGTACAATCTATAAATTCGGCTACTAGCATAGCCGAGCCCCCGTAATGGCCTTATACCGCTGGAACGTTCATCTCGAGGGAGGGCCGTGCCACAAACCCGCGGAGCGGTGGCCGTAGATTATACTAGAACTAAAATACATCCTCACTACGGGTGTCGTGGACACCAAACTGAAGGTTGTTGAATACGCTTCCGGAGTAGGGTTCACTATACCTGGGCGAACATCAGCCCGAGCATTGCCACCAATCAAACTAACTCAAAATGACTACTATGTTAGCCTCCGGCGAAGGGGAGTCATTTTCCAATCCTGAAGATTTCCCCGCCCATCCTCGCTATTTTCTCATATCTCAAGAATCCCATGCTTTTTAAATGCCTATGAGAGTGTGTAGGGTCCCTTCTTTATCCTATAGTATCGGCTCCACGGTGACCATGCATTGAAGAATTATTAATGATTCACGGCGCCCATATAAGTCACGTGGCGCGCCCTTCTTGGTTTCATACGCTCCTCGCGCTTGTTTGAGAAAGAAGCAAGTCAGAATTCAGTATATGTTTACAGTCGTGGCGCAGGTACTTGCAACTCGGGTAGGCTACGCTGCCGCGTTCGAAGACACAAATCTACTGGTTACCTATCTGCAAACCAATTGTTAGGGTAGACAGCCGAAACTAGTCTAACCTCAGTAAATAG"
 print (dnaString)
 print (rna(dnaString))
+
+print ()
+print (revc.__doc__)
+dnaString = "AAAACCCGGT"
+print (dnaString)
+print (revc(dnaString))
 
 print ()
 print (fib.__doc__)
@@ -305,4 +422,39 @@ print ('C:', " ".join(str(x) for x in C_profile))
 print ('G:', " ".join(str(x) for x in G_profile))            
 print ('T:', " ".join(str(x) for x in T_profile))            
 
-    
+print ()
+print (grph.__doc__)
+print ("datafile: grph_dataset.txt")
+adiacency_list = grph('grph_dataset.txt')
+for item in adiacency_list:
+    print (item)
+
+print ()
+print (iev.__doc__)
+couples = "16079 16809 18603 19300 18912 19768"
+print (couples)
+print (iev(couples))
+
+print ()
+print (lcsm.__doc__)
+print ("datafile: lcsm_dataset.txt")
+start = time.time()
+print (lcsm('lcsm_dataset.txt'))
+end = time.time()
+print (f"execution time in seconds: {end-start}")
+
+print ()
+print (lia.__doc__)
+k = 5
+n = 7
+simulations = 10000 # 1000000 to get good approximation 
+print (f'k = {k}, n = {n}')
+start = time.time()
+print (lia(k, n, simulations))
+end = time.time()
+print (f"execution time in seconds: {end-start}")
+
+print ()
+print (mprt.__doc__)
+print ("datafile: mprt_dataset.txt")
+print (mprt('mprt_dataset.txt'))
