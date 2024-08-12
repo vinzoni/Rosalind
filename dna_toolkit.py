@@ -16,6 +16,31 @@ def gc_content(dnaString):
 
     return (count / len(dnaString)) * 100
 
+def reverse_complement(dnaString):
+    ''' Ex. 3: Complementing a strand of DNA and Reverting '''
+    reverseDNAString = dnaString[::-1]
+    complementDNA = []
+    for nuc in reverseDNAString:
+        if nuc == 'A':
+            complementDNA.append('T')
+        elif nuc == 'T':
+            complementDNA.append('A')
+        elif nuc == 'C':
+            complementDNA.append('G')
+        elif nuc == 'G':
+            complementDNA.append('C')
+    return ''.join(complementDNA)
+
+def finding_motifs_locations(dnaString, motif):
+    ''' Ex. 10: Finding a Motif in DNA '''
+    locations = []
+    
+    for i in range(len(dnaString)-len(motif)):
+        if dnaString[i:i+len(motif)] == motif:
+            locations.append(i+1)
+            
+    return locations
+
 def read_fast_file(filename):
 
     with open(filename, "r") as f:
@@ -37,3 +62,20 @@ def read_fast_file(filename):
     genome_dict[fast_id] = data
     
     return genome_dict
+
+def permutations(dataset):
+
+    result = []
+    if len(dataset) == 2:
+        result.append(dataset)
+        result.append(dataset[::-1])
+    else:
+        for d in dataset:
+            perms = []
+            prefix = [d]
+            suffix = [x for x in dataset]
+            suffix.remove(d)
+            perms += permutations(suffix)
+            for p in perms:
+                result.append(prefix + p)
+    return result

@@ -33,18 +33,8 @@ def rna(dnaString):
 
 def revc(dnaString):
     ''' Ex. 3: Complementing a strand of DNA and Reverting '''
-    reverseDNAString = dnaString[::-1]
-    complementDNA = []
-    for nuc in reverseDNAString:
-        if nuc == 'A':
-            complementDNA.append('T')
-        elif nuc == 'T':
-            complementDNA.append('A')
-        elif nuc == 'C':
-            complementDNA.append('G')
-        elif nuc == 'G':
-            complementDNA.append('C')
-    return ''.join(complementDNA)
+
+    return reverse_complement(dnaString)
 
 def fib(n, k):
     ''' Ex. 4: Rabbits and Recurrence Relations '''
@@ -175,13 +165,9 @@ def prot(rnaString):
 
 def subs(dna1, dna2):
     ''' Ex. 10: Finding a Motif in DNA '''
-    locations = []
-    
-    for i in range(len(dna1)-len(dna2)):
-        if dna1[i:i+len(dna2)] == dna2:
-            locations.append(str(i+1))
-            
-    return " ".join(locations)
+    locations = finding_motifs_locations(dna1, dna2)
+    return " ".join(str(l) for l in locations)
+
 
 def cons(datafile):
     ''' Ex. 11: Consensus and Profile '''
@@ -346,6 +332,117 @@ def mprt(datafile):
         retval += f"{protein_name}\n{motif_locations}\n"
     return retval
 
+def mrna(proteinString):
+    ''' Ex. 17: Inferring mRNA from Protein '''
+    
+    reverse_RNA_codon_table = {
+        "F": ["UUU", "UUC"],    
+        "L": ["CUU", "CUC", "UUA", "UUG", "CUA", "CUG"],    
+        "I": ["AUU", "AUC", "AUA"],    
+        "V": ["GUU", "GUC", "GUA", "GUG" ],    
+        "M": ["AUG" ],    
+        "S": ["UCU",  "UCC", "UCA", "UCG", "AGU",  "AGC" ],    
+        "P": ["CCU",  "CCC", "CCA", "CCG" ],    
+        "T": ["ACU",  "ACC", "ACA", "ACG" ],    
+        "A": ["GCU",  "GCC", "GCA", "GCG" ],    
+        "Y": ["UAU",  "UAC" ],    
+        "H": ["CAU",  "CAC" ],    
+        "N": ["AAU",  "AAC" ],    
+        "D": ["GAU",  "GAC" ],    
+        "Q": ["CAA",  "CAG" ],    
+        "K": ["AAA",  "AAG" ],    
+        "E": ["GAA",  "GAG" ],    
+        "C": ["UGU",  "UGC" ],    
+        "R": ["CGU",  "CGC", "CGA", "AGA", "CGG", "AGG" ],    
+        "G": ["GGU",  "GGC", "GGA", "GGG" ],    
+        "W": ["UGG" ],    
+        "Stop": ["UAA",  "UAG", "UGA" ],    
+    }
+    
+    count = 1
+    for c in proteinString:
+        count *= len(reverse_RNA_codon_table[c])
+    count *= len(reverse_RNA_codon_table["Stop"])
+
+    return count % 1000000
+
+def orf(datafile):
+    ''' Ex. 18: Open Reading Frames '''
+    genome_dict = read_fast_file(datafile)
+    dnaString = next(iter(genome_dict.values()))
+    
+    DNA_codon_table = {
+        "TTT": "F",      "CTT": "L",      "ATT": "I",      "GTT": "V",
+        "TTC": "F",      "CTC": "L",      "ATC": "I",      "GTC": "V",
+        "TTA": "L",      "CTA": "L",      "ATA": "I",      "GTA": "V",
+        "TTG": "L",      "CTG": "L",      "ATG": "M",      "GTG": "V",
+        "TCT": "S",      "CCT": "P",      "ACT": "T",      "GCT": "A",
+        "TCC": "S",      "CCC": "P",      "ACC": "T",      "GCC": "A",
+        "TCA": "S",      "CCA": "P",      "ACA": "T",      "GCA": "A",
+        "TCG": "S",      "CCG": "P",      "ACG": "T",      "GCG": "A",
+        "TAT": "Y",      "CAT": "H",      "AAT": "N",      "GAT": "D",
+        "TAC": "Y",      "CAC": "H",      "AAC": "N",      "GAC": "D",
+        "TAA": "Stop",   "CAA": "Q",      "AAA": "K",      "GAA": "E",
+        "TAG": "Stop",   "CAG": "Q",      "AAG": "K",      "GAG": "E",
+        "TGT": "C",      "CGT": "R",      "AGT": "S",      "GGT": "G",
+        "TGC": "C",      "CGC": "R",      "AGC": "S",      "GGC": "G",
+        "TGA": "Stop",   "CGA": "R",      "AGA": "R",      "GGA": "G",
+        "TGG": "W",      "CGG": "R",      "AGG": "R",      "GGG": "G", 
+    }
+
+    startCodon = "ATG"
+#    strands = [dnaString,                           
+#               dnaString[1:],                       
+#               dnaString[2:],                       
+#               reverse_complement(dnaString),       
+#               reverse_complement(dnaString)[1:],   
+#               reverse_complement(dnaString)[2:]]   
+    strands = [dnaString, reverse_complement(dnaString)]   
+    
+    proteins = set() 
+    startCodon = "ATG"
+    
+    for dnaString in strands:
+        locations = finding_motifs_locations(dnaString, startCodon)
+        for loc in locations:
+            codingSection = True
+            protein = ""
+            codon = ""
+            for nuc in dnaString[loc-1:]:
+                codon += nuc
+                if len(codon) == 3:
+                
+                    aminoacid = DNA_codon_table[codon]
+                
+                    if aminoacid == "Stop":
+                        codingSection = False
+                        break
+                
+                    protein += aminoacid
+                    codon = ""
+            # se codingSection e' true significa che e' finita la stringa prima di incontrare un codone di stop e allora non vale.
+            if codingSection == False and len(protein) > 0:
+                proteins.add(protein)
+        
+    return '\n'.join(proteins)
+
+def perm(n):
+    ''' Ex. 19: Enumerating Gene Orders '''
+    
+    dataset = [x for x in range(1, n+1)]
+
+    perms = permutations(dataset)
+    
+    result = f'{len(perms)}\n'
+    for p in perms:
+        result += f'{" ".join(str(x) for x in p)}\n'
+    return result
+
+def prtm(proteinString):
+    ''' Ex. 20: Calculating Protein Mass '''
+    
+    return "100.2"
+
 print ()
 print (dna.__doc__)
 dnaString = "CATGCGAGACATTATACACTATGGCTTGGCAGGCGAAGAATATTTCTTGGGATTTCGGACGACCACATTTCCGCCACACACGCCGCGTTGAAGCGTCCTCACGTCACGCCGTTACATTCGTATTCGCTCTAAGCGCCTCCATCACAACCTGTAATACTCTATGAGGGATCAAACCAGGTGCTAACCAAAGAACCAATCTTGCACAGCCGTGTAGGTGGTTCGTGGGAATTACCCGGAAACAGCCTAGAAGAGCATAACCACGTATCGTCGCGAACTGTGTCCATTTTCGTCGCTCAACCAAACACTACTTCGTCGAACTTGAGCGGTGCGACGGCCCTATAAGTACCTTGTATGCCGCTAGGAAGATACCGAAGATCGAAACAGTTATCGGGAGGCAACTGTGTCGTTCCTTACATGTGAGAAAGCACCCCGGAGGGGTGTACGCATATCATGGCCATCTGCGGGGCGAATTGATCTTTAGACCCCGCTTACCCCACGTCGCTTTCCGTCCTTCTTCATAAGACCCCTAAGGGTATGTCCGGTTACAGTTTACGCCACTTCTGCTCGTCTCGATAGTAAGTCTAGCGTCGCATGAGAAAAAGACCTCCGCCGGTACAAATGCATCTAAGCCAACGCGTAAGCACCAGAGAGTTTAATCCGTCTCCGGGCTCTCGAAGCTATTAGTGCCGCGCGGGCATTTAACAGTCAGTAATAGCTCACCCCGCATTAGATGAAGTATGTCACCTCTAACGGACTTCGCATCTCTTGTGTTGTCCAGACTACAGACACTCTAGACAGAAGCCCCTCTGGCGGGCTTGGTGCAGCGCTGGAGTC"
@@ -458,3 +555,28 @@ print ()
 print (mprt.__doc__)
 print ("datafile: mprt_dataset.txt")
 print (mprt('mprt_dataset.txt'))
+
+print ()
+print (mrna.__doc__)
+#proteinString = "MGSPKWAGTDMPTFQDYNQEDYEIDKKYHACWGMGQVGSIYDFGARAMKFMYTDFTAPFVPETLQCYTCNLRHRYPYHDNIALTDARANPMCDVSYGFFINNFEIYVRSYCVQPYCSPYQEFWSWRVGIPGVIGDEKHWGYPTWHNFWWSFGELDWEDVQMFCTDMPRIMAYQHMGQTFQRPIWMMYQAQAWYDRHGMMDPWTFTKHTKQWGPFYNRPVWPVSWRKHHARAATNSLWIAVCVVPPERINFATGDINVPEPMPPVFFSSGTSKPYCHHNLEKQSPYDLFYSPYPKCLKSGVCDLFQECAQQLDHWMGIIRKHGVRDQSGEQWQTVWQLHHQEPKHSHATHWEDHEAPKHVAHQAMWFEYICQYSCWVWFRGRLFYHDQCRSIINLTWLRKIHNYEFAPQCWVLRLKRHLSQHMRGDYYIWQKQDICNVAVGTYLRDGRKRNEFCQKYIHMSYSADGGRCAGKQDDMSQPGHHLPMSKRDTWQFWAPRMCCRPITLKGLHDMLCTHNNPPMAIRWANVMFWRIKIPCAAQSAKIEDMKMPYIPCGEGLNFLKSEPLCCETNYFTTFCHKKEIERWKSKVGCCRYAITGNLWKMMYPSNSANPGGRHGVYCWQHPEHLFERWYCECWWEFNTWNDSAKGIHMSHLMVYSWLHKRSRDPKQMINRYQCETKVGEVQQMHAYGTGYNIQIWWGAPKDNSVSQWCSDDAREPDSGVMGKVDYIQAGDVDKKCKDEHWCGLIDSTVTTYFTVWWGSQLPRMPRMNRNGINRVVECWNVICPAFHMHITCYESNRDKFEDREGTVWDYWNPSGHHGQGQKRQLQKRILIMYPKGSLEDPAQNMADWYHLLCNYQNNTWSHNWTVISCIETAMYAGNRQQERAGCRYSWWQHMDEICTACVTDTNHAAHIFFECMEKSWDISCWFSMGIDFAKTEFCRHNLLHNNHSYKSREKVLKEYIPDTSDLASVLPGQSCYHYNNRRIQTQSMGQAMGHHWCQN"
+proteinString = "MPWIEAQNKAIISYECNLGSTGDGKPIFPFMWLAQNMFYAKWYFGQTWMKNHKGIWISGQCAVYPNQTRPVDCYMCGEARWKRNQAIAKCVNLLCGREHCCISWRNMTVTDRNSMSWPDLASFIIQRHSMPDSSNVDYFICGGHGSIHYALWFDVNPGCSWDLLASYVWSPPLMGVCITCTCVHCGNNGMSEASYLQANTPRVLEGQCMRFNMCCWNLYEDCMRTWIWGYVVKGEILQPVRPDLNGLELFQFSDCRHVYPIMTTLSSLGYNVLSISTLIECLDDGSNFCEVCELEIGAKIWRLLAFPNDVRMCEEFSVMPVSMMRAQTSVFGQGFETPNRQMTFAPFGLAIKFDQFAHMILKNCLIFALKMDMNITPVAPNQMKPWPLDCLIYDQCGIRRMRSISACAELPGDESYASTMHQGIWNHSWPAYMWQENTLDYSHNMRCCQKEEIFAHKIQSPRRGAKWLDKMLLDKDATLKSCENVGCQVMQILNSFQESTDESFSRYVKNWPCIPFNKFHMCCWSRVQMGPNCVSCDSSMYAYSVQTVDFKMLYFTTIQGGHNPISFQMDAHILKWDFPRNESHKEACCNVSPEPDLDHCGGNWYQQPSRVEPEHDTNYPYGMRVEPLPFYRWEDHCNKEMHQPTQEAIYAGLLQLLGVPSCLSFLSCFAMADEPITLYMTHLQYKWCNMCCIFSAQKVNVNHKGEHSKKFGATFAQPLLPRWYGRWMINFSQMQIPIKESIDPMWAGTTQAVNKIPRDICHFIMMGGCGDLGGQTIHTFMARKWWGCAIPNGLLKEASGCWYQMKDHKQKNMLRVKCGADRVSHFNLWTTIGHHLARHGGQIRKLKPGIRNDRNQLGGQMVVIWDVWCTECKCIEKEHPSFCSDERTCGATIKETRWFQMLVFFTFQEWSNDGLSDCTHLPMCTEGQMIQRVFPAIKEMRNHEVLLLTWQMGFECILYVAKLDILVTPTSNFVTSQKMYPQMACRIEHKHQGCNENKQ"
+print (proteinString)
+print (mrna(proteinString))
+
+print ()
+print (orf.__doc__)
+print ("datafile: orf_dataset.txt")
+print (orf('orf_dataset.txt'))
+
+print ()
+print (perm.__doc__)
+n = 7
+print (f'n = {n}')
+print (perm(n))
+
+print ()
+print (prtm.__doc__)
+protein = "SKADYEK"
+print (protein)
+print (prtm(protein))
+
