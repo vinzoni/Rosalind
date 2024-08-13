@@ -31,6 +31,47 @@ def reverse_complement(dnaString):
             complementDNA.append('C')
     return ''.join(complementDNA)
 
+def dna_to_rna_transcription(dnaString):
+    return dnaString.replace('T', 'U')
+
+def rna_to_protein_translation(rnaString):
+    ''' Ex. 9: Translating RNA into Protein '''
+    
+    RNA_codon_table = {
+        "UUU": "F",      "CUU": "L",      "AUU": "I",      "GUU": "V",
+        "UUC": "F",      "CUC": "L",      "AUC": "I",      "GUC": "V",
+        "UUA": "L",      "CUA": "L",      "AUA": "I",      "GUA": "V",
+        "UUG": "L",      "CUG": "L",      "AUG": "M",      "GUG": "V",
+        "UCU": "S",      "CCU": "P",      "ACU": "T",      "GCU": "A",
+        "UCC": "S",      "CCC": "P",      "ACC": "T",      "GCC": "A",
+        "UCA": "S",      "CCA": "P",      "ACA": "T",      "GCA": "A",
+        "UCG": "S",      "CCG": "P",      "ACG": "T",      "GCG": "A",
+        "UAU": "Y",      "CAU": "H",      "AAU": "N",      "GAU": "D",
+        "UAC": "Y",      "CAC": "H",      "AAC": "N",      "GAC": "D",
+        "UAA": "Stop",   "CAA": "Q",      "AAA": "K",      "GAA": "E",
+        "UAG": "Stop",   "CAG": "Q",      "AAG": "K",      "GAG": "E",
+        "UGU": "C",      "CGU": "R",      "AGU": "S",      "GGU": "G",
+        "UGC": "C",      "CGC": "R",      "AGC": "S",      "GGC": "G",
+        "UGA": "Stop",   "CGA": "R",      "AGA": "R",      "GGA": "G",
+        "UGG": "W",      "CGG": "R",      "AGG": "R",      "GGG": "G", 
+    }
+
+    proteinString = ""
+    codon = ""    
+    for nuc in rnaString:
+        codon += nuc
+        
+        if len(codon) == 3:
+            protein = RNA_codon_table[codon]
+            
+            if protein == "Stop":
+                break
+            
+            proteinString += RNA_codon_table[codon]
+            codon = ""
+            
+    return proteinString
+
 def finding_motifs_locations(dnaString, motif):
     ''' Ex. 10: Finding a Motif in DNA '''
     locations = []
