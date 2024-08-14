@@ -120,3 +120,21 @@ def permutations(dataset):
             for p in perms:
                 result.append(prefix + p)
     return result
+
+def combinations(alphabetString, wordlen):
+
+    # "A B C" --> [ 'A', 'B', 'C',]
+    alphabet = alphabetString.split(" ")
+
+    result = []
+    
+    if wordlen == 2:
+        for c1 in alphabet:
+            for c2 in alphabet:
+                result.append(f'{c1}{c2}')
+    else:
+        for c1 in alphabet:
+            subwords = combinations(alphabetString, wordlen-1)
+            for sw in subwords:
+                result.append(f'{c1}{sw}')
+    return result
